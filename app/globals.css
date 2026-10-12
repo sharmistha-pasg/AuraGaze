@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+:root {
+  --ag-bg: #EAF0E6;
+  --ag-surface: #F3F7F0;
+  --ag-text: #26352A;
+  --ag-accent: #3F6445;
+  --ag-border: #A9BFA9;
+}
+
+*, *::before, *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+html {
+  scroll-behavior: auto !important;
+}
+
+body {
+  background-color: var(--ag-bg);
+  color: var(--ag-text);
+  min-height: 100vh;
+}
+
+:focus-visible {
+  outline: 3px solid var(--ag-accent) !important;
+  outline-offset: 2px !important;
+}
