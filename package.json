@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:profile": "node --test shared/",
+    "test:profile": "node --test 'shared/**/*.test.js'",
     "ext:sync": "node scripts/ext-sync.mjs",
     "ext:zip": "node scripts/ext-zip.mjs"
   },

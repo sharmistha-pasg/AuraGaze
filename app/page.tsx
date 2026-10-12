@@ -1,3 +1,5 @@
+import AuraProfile from '@shared/profile';
+
 export default function HomePage() {
   return (
     <main id="main-content" className="p-8 max-w-3xl mx-auto">
