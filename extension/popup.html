@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AuraGaze</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <header class="popup-header">
+      <div class="header-title-row">
+        <h1 class="logo">AuraGaze</h1>
+        <div class="toggle-wrapper">
+          <label class="switch-label">
+            <input type="checkbox" id="master-toggle" checked>
+            <span class="toggle-text" id="master-status-text">On</span>
+          </label>
+        </div>
+      </div>
+      <p class="tagline">Sensory-Safe Web Reading</p>
+    </header>
+
+    <div class="reader-btn-row">
+      <button type="button" id="reader-toggle-btn" class="btn btn-reader">
+        Toggle Reader View
+      </button>
+      <div id="reader-msg" class="reader-msg" aria-live="polite"></div>
+    </div>
+
+    <!-- Quick Presets -->
+    <section class="section">
+      <label class="section-label">Presets</label>
+      <div class="btn-group">
+        <button type="button" class="btn btn-sm" id="btn-gentle">Gentle</button>
+        <button type="button" class="btn btn-sm" id="btn-lowlight">Low Light</button>
+        <button type="button" class="btn btn-sm" id="btn-maxcalm">Max Calm</button>
+      </div>
+    </section>
+
+    <!-- Palette -->
+    <section class="section">
+      <label for="palette-select" class="section-label">Color Palette</label>
+      <select id="palette-select" class="select-field">
+        <option value="auto">Auto (by time of day)</option>
+        <option value="sage">Sage (Calm Green)</option>
+        <option value="amber">Amber (Soft Gold)</option>
+        <option value="forest">Forest (Deep Night)</option>
+      </select>
+    </section>
+
+    <!-- Typography & Sliders -->
+    <section class="section">
+      <div class="slider-row">
+        <label for="font-scale-slider">Text Size</label>
+        <span id="font-scale-val" class="slider-val">1.10x</span>
+      </div>
+      <input type="range" id="font-scale-slider" min="1.0" max="1.6" step="0.05" value="1.1">
+
+      <div class="slider-row">
+        <label for="dim-slider">Dimming</label>
+        <span id="dim-val" class="slider-val">0%</span>
+      </div>
+      <input type="range" id="dim-slider" min="0" max="30" step="1" value="0">
+    </section>
+
+    <!-- Checkboxes -->
+    <section class="section">
+      <label class="checkbox-row">
+        <input type="checkbox" id="chk-tint">
+        <span>Warm Amber Tint (Less blue light)</span>
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" id="chk-distractions" checked>
+        <span>Hide Ads & Clutter</span>
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" id="chk-freeze" checked>
+        <span>Freeze Autoplay Videos</span>
+      </label>
+    </section>
+
+    <!-- Video Reveal Delay -->
+    <section class="section">
+      <div class="slider-row">
+        <label for="delay-slider">Video Reveal Delay</label>
+        <span id="delay-val" class="slider-val">2.0s</span>
+      </div>
+      <input type="range" id="delay-slider" min="1000" max="4000" step="250" value="2000">
+    </section>
+
+    <!-- Import Profile -->
+    <section class="section import-section">
+      <label for="import-input" class="section-label">Import from Dashboard</label>
+      <div class="import-row">
+        <input type="text" id="import-input" placeholder="Paste link or code..." class="input-field">
+        <button type="button" id="import-btn" class="btn btn-sm">Import</button>
+      </div>
+      <div id="import-msg" class="import-msg" aria-live="polite"></div>
+    </section>
+
+    <footer class="popup-footer">
+      <p>Reveal uses hover or keyboard focus for the set delay. AuraGaze cannot detect where you are looking.</p>
+    </footer>
+  </div>
+
+  <script src="profile.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
