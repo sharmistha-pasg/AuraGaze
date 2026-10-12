@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Science Dispatch - The Living Air Conditioners</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #ffffff;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11px;
+      line-height: 1.25;
+    }
+
+    /* Fixed watermark label */
+    .demo-watermark {
+      position: fixed;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0, 0, 0, 0.85);
+      color: #ffff00;
+      padding: 5px 10px;
+      font-size: 11px;
+      font-weight: bold;
+      z-index: 999999;
+      border: 1px solid #ffffff;
+      pointer-events: none;
+    }
+
+    /* Top pulsing ad banner - safe 2s cycle (0.5 Hz, strictly <= 2 flashes/sec) */
+    .ad-banner {
+      width: 100%;
+      padding: 12px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 14px;
+      color: #ffffff;
+      animation: pulseBanner 2s ease-in-out infinite alternate;
+      border-bottom: 2px solid #000000;
+      cursor: pointer;
+    }
+    @keyframes pulseBanner {
+      0% {
+        background-color: #ff0055;
+        color: #ffffff;
+      }
+      100% {
+        background-color: #0055ff;
+        color: #ffff00;
+      }
+    }
+
+    /* Site Header */
+    header.site-header {
+      background: #0022cc;
+      color: #ffffff;
+      padding: 10px 16px;
+      border-bottom: 3px solid #ffcc00;
+    }
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .site-title {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      text-transform: uppercase;
+      color: #ffffff;
+    }
+    nav.site-nav {
+      margin-top: 6px;
+      display: flex;
+      gap: 12px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+    nav.site-nav a {
+      color: #ffff99;
+      text-decoration: underline;
+    }
+
+    /* Scrolling ticker */
+    .ticker {
+      background: #ffee00;
+      color: #cc0000;
+      font-weight: bold;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-bottom: 1px solid #cc0000;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .ticker marquee {
+      width: 100%;
+    }
+
+    /* 3-Column Layout */
+    .page-layout {
+      display: grid;
+      grid-template-columns: 200px minmax(500px, 1fr) 260px;
+      gap: 12px;
+      max-width: 1280px;
+      margin: 12px auto;
+      padding: 0 10px;
+    }
+
+    /* Left Sidebar */
+    .left-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .ad-slot {
+      padding: 16px;
+      text-align: center;
+      font-weight: 900;
+      color: #ffffff;
+      background: linear-gradient(135deg, #ff00aa, #00d4ff, #ffbb00);
+      background-size: 250% 250%;
+      animation: slowGradient 6s ease infinite;
+      border: 2px dashed #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      cursor: pointer;
+    }
+    @keyframes slowGradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .trending-box {
+      border: 1px solid #0055ff;
+      background: #f0f7ff;
+      padding: 8px;
+    }
+    .trending-box h4 {
+      background: #0055ff;
+      color: #fff;
+      padding: 4px;
+      margin-bottom: 6px;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+    .trending-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .trending-tile {
+      background: #ffffff;
+      border: 1px solid #ccddee;
+      padding: 6px;
+      font-size: 10px;
+      font-weight: bold;
+      color: #0033aa;
+      cursor: pointer;
+    }
+    .trending-tile:hover {
+      background: #ffffee;
+    }
+
+    /* Center Main Article */
+    main.main-content {
+      background: #ffffff;
+      padding: 8px 14px;
+    }
+    article.article-body {
+      font-size: 12px;
+      line-height: 1.4;
+      color: #222222;
+    }
+    h1.article-title {
+      font-size: 24px;
+      line-height: 1.15;
+      color: #0022cc;
+      margin-bottom: 8px;
+      font-weight: 900;
+    }
+    .article-meta {
+      font-size: 11px;
+      color: #666666;
+      border-bottom: 1px solid #dddddd;
+      padding-bottom: 6px;
+      margin-bottom: 12px;
+    }
+    .article-meta .byline {
+      font-weight: bold;
+      color: #222222;
+    }
+    article.article-body p {
+      margin-bottom: 12px;
+      text-align: justify;
+    }
+    article.article-body h2 {
+      font-size: 16px;
+      color: #0022cc;
+      margin: 16px 0 8px;
+      border-bottom: 2px solid #0055ff;
+      padding-bottom: 2px;
+    }
+    article.article-body blockquote {
+      border-left: 4px solid #ff0055;
+      background: #fff5f8;
+      padding: 10px 12px;
+      margin: 14px 0;
+      font-style: italic;
+      color: #660022;
+      font-size: 12px;
+    }
+    figure.article-figure {
+      margin: 14px 0;
+      text-align: center;
+    }
+    figure.article-figure svg {
+      max-width: 100%;
+      height: auto;
+      border: 1px solid #dddddd;
+      background: #fef3c7;
+    }
+    figure.article-figure figcaption {
+      font-size: 10px;
+      color: #666666;
+      margin-top: 4px;
+      font-style: italic;
+    }
+
+    /* In-article autoplay video */
+    .video-container {
+      margin: 16px 0;
+      padding: 8px;
+      background: #f0f0f0;
+      border: 1px solid #cccccc;
+    }
+    .video-container h5 {
+      font-size: 10px;
+      color: #888888;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    video#demo-video {
+      width: 100%;
+      max-height: 280px;
+      background-color: #111111;
+      display: block;
+      border: 1px solid #999999;
+    }
+
+    /* Right Sidebar */
+    .right-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .advert-box {
+      padding: 18px 12px;
+      text-align: center;
+      font-weight: bold;
+      color: #ffffff;
+      background: linear-gradient(135deg, #00bb22, #0055ff, #ff0077);
+      background-size: 250% 250%;
+      animation: slowGradient 7s ease infinite;
+      border: 2px solid #ffcc00;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      cursor: pointer;
+    }
+    .advert-box span.badge {
+      display: inline-block;
+      background: #ffff00;
+      color: #cc0000;
+      padding: 2px 6px;
+      font-size: 9px;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+    .around-web-box {
+      border: 1px solid #ff0055;
+      background: #fff9fa;
+      padding: 8px;
+    }
+    .around-web-box h4 {
+      background: #ff0055;
+      color: #ffffff;
+      padding: 4px;
+      margin-bottom: 6px;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+    .link-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .link-card {
+      background: #ffffff;
+      border: 1px solid #ffccd9;
+      padding: 6px;
+      cursor: pointer;
+    }
+    .link-card-title {
+      font-size: 11px;
+      font-weight: bold;
+      color: #0033aa;
+      text-decoration: underline;
+    }
+    .link-card-sponsor {
+      font-size: 9px;
+      color: #888888;
+      margin-top: 2px;
+    }
+
+    /* Newsletter Sticky Pop-up Modal */
+    #newsletter-popup.newsletter-popup.subscribe-modal {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 440px;
+      max-width: 90vw;
+      background: #ffffff;
+      border: 4px solid #ff0055;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      padding: 16px;
+      z-index: 100000;
+      text-align: center;
+    }
+    .newsletter-popup h3 {
+      color: #ff0055;
+      font-size: 16px;
+      margin-bottom: 6px;
+      font-weight: 900;
+    }
+    .newsletter-popup p {
+      font-size: 11px;
+      color: #333333;
+      margin-bottom: 10px;
+    }
+    .newsletter-popup input[type="email"] {
+      width: 100%;
+      padding: 8px;
+      font-size: 12px;
+      border: 1px solid #cccccc;
+      margin-bottom: 8px;
+    }
+    .newsletter-popup .btn-sub {
+      width: 100%;
+      padding: 8px;
+      background: #ff0055;
+      color: #ffffff;
+      font-weight: bold;
+      font-size: 12px;
+      border: none;
+      cursor: pointer;
+      margin-bottom: 6px;
+    }
+    .newsletter-popup .btn-dismiss {
+      background: none;
+      border: none;
+      color: #666666;
+      font-size: 11px;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    /* Footer */
+    footer.site-footer {
+      background: #222222;
+      color: #aaaaaa;
+      padding: 16px;
+      text-align: center;
+      margin-top: 24px;
+      font-size: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top pulsing banner ad -->
+  <div class="ad-banner" role="banner">
+    FLASH SALE! Get 85% OFF High-Speed Cloud Subscriptions - Limited Time Offer!
+  </div>
+
+  <!-- Watermark -->
+  <div class="demo-watermark">Demo page: intentionally cluttered</div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-top">
+      <div class="site-title">Daily Science Dispatch</div>
+      <div style="font-size: 10px; color: #ffffcc;">EDITION: GLOBAL ONLINE | UPDATED EVERY HOUR</div>
+    </div>
+    <nav class="site-nav">
+      <a href="#biology">Biology</a>
+      <a href="#climate">Climate</a>
+      <a href="#space">Deep Space</a>
+      <a href="#physics">Quantum Physics</a>
+      <a href="#tech">Artificial Intelligence</a>
+      <a href="#sponsored" style="color: #ffcc00;">SPONSORED REVIEWS</a>
+    </nav>
+  </header>
+
+  <!-- Scrolling ticker -->
+  <div class="ticker" role="marquee">
+    <marquee behavior="scroll" direction="left" scrollamount="6">
+      BREAKING NEWS: Astronomers detect periodic magnetic pulses from nearby galaxy cluster | Heavy heatwave strains European energy grids | Marine biologists discover bioluminescent coral reefs at record depths | Global tech summit kicks off with major chip breakthrough announcements
+    </marquee>
+  </div>
+
+  <!-- 3-Column Layout -->
+  <div class="page-layout">
+
+    <!-- Left Sidebar -->
+    <aside class="left-sidebar">
+      <!-- Sidebar ad slot -->
+      <div class="ad-slot">
+        SPECIAL SPONSOR<br>
+        Save 70% On Home Energy Audits Today!
+      </div>
+
+      <!-- Distraction: Trending now -->
+      <div class="trending-box">
+        <h4>Trending Now</h4>
+        <div class="trending-grid">
+          <div class="trending-tile">Scientists Stunned by New Deep-Sea Crystal Formation</div>
+          <div class="trending-tile">Ancient Roman Wine Recipe Decoded by Chemists</div>
+          <div class="trending-tile">10 Household Items from 1995 Worth a Fortune</div>
+          <div class="trending-tile">Why Solar Storms Are Getting Stronger This Decade</div>
+          <div class="trending-tile">Mysterious Radio Signal Repeated Every 18 Minutes</div>
+          <div class="trending-tile">Can Desert Sand Be Turned into Construction Glass?</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center Column: Article -->
+    <main class="main-content">
+      <article class="article-body">
+        <h1 class="article-title">The Living Air Conditioners: How Honeybees Keep Their Hives Cool in Summer</h1>
+        
+        <div class="article-meta">
+          <span class="byline">By Dr. Eleanor Vance</span> | Published August 14, 2026 | Category: Biology & Ecology
+        </div>
+
+        <p>While a blistering summer afternoon can easily push ambient temperatures well past 38 degrees Celsius (100 degrees Fahrenheit), the interior of a healthy honeybee colony remains remarkably stable between 32 and 35 degrees Celsius. If the temperature climbs even a degree or two higher, the delicate wax comb begins to soften and slump, and the vulnerable developing brood risks irreversible damage. Without electrical air conditioners or computerized thermostats, an insect colony achieves this extraordinary feat of microclimate regulation entirely through collective behavioral thermodynamics.</p>
+
+        <p>The cooling operation begins the moment internal temperature scouts detect heat spikes along the core comb chambers. Rather than continuing their normal foraging for floral nectar or pollen, designated worker bees abruptly transition into emergency water foragers. These bees make rapid round trips to nearby puddles, ponds, and damp moss beds, loading their honey crops with cool liquid.</p>
+
+        <p>Once back inside the dark hive, the water carriers do not simply unload the liquid at random. Instead, receiver bees accept the moisture via trophallaxis—mouth-to-mouth liquid exchange—and carefully spread thin, glistening films of water across the open cell rims and over the wax cappings of the brood nest.</p>
+
+        <!-- In-article Autoplay Video -->
+        <div class="video-container">
+          <h5>Video: Honeycomb Hive Activity (Autoplay)</h5>
+          <video id="demo-video" autoplay muted loop playsinline src="/demo/clip.mp4" aria-label="Honeybee activity demonstration clip">
+            Your browser does not support the video tag.
+          </video>
+        </div>
+
+        <h2>Wing-Fanning and Forced Convection</h2>
+
+        <p>Spreading moisture across comb surfaces is only the initial stage of the cooling cycle. To drive rapid evaporation, hundreds of worker bees assemble in synchronized rows near the hive entrance and along internal ventilation corridors. Orienting their bodies toward the interior and anchoring firmly with their claws, they beat their wings at rapid frequencies to generate steady, directional air currents.</p>
+
+        <blockquote>A single bee's wing produces only a whisper of air, but thousands of bees fanning in coordinated harmony create a forced-air convection system that rivals modern industrial ventilation.</blockquote>
+
+        <p>Some bees draw fresh air inward across the damp combs, while teams stationed on the opposite side exhaust warm, moisture-laden air through the hive entrance. In severe heat, workers employ droplet manipulation: a bee regurgitates a tiny drop of water onto her proboscis, exposing it to air currents. As the water evaporates, it cools the fluid, which the bee swallows back into her body, using her own physiology as a biological heat exchanger.</p>
+
+        <h2>Thermal Absorption and Colony Bearding</h2>
+
+        <figure class="article-figure">
+          <svg viewBox="0 0 600 300" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Honeybees regulating hive temperature on honeycomb">
+            <rect width="600" height="300" fill="#fef3c7"/>
+            <g fill="#fde68a" stroke="#d97706" stroke-width="2">
+              <polygon points="100,50 140,50 160,85 140,120 100,120 80,85"/>
+              <polygon points="180,50 220,50 240,85 220,120 180,120 160,85"/>
+              <polygon points="260,50 300,50 320,85 300,120 260,120 240,85"/>
+              <polygon points="340,50 380,50 400,85 380,120 340,120 320,85"/>
+              <polygon points="420,50 460,50 480,85 460,120 420,120 400,85"/>
+              <polygon points="140,120 180,120 200,155 180,190 140,190 120,155"/>
+              <polygon points="220,120 260,120 280,155 260,190 220,190 200,155"/>
+              <polygon points="300,120 340,120 360,155 340,190 300,190 280,155"/>
+              <polygon points="380,120 420,120 440,155 420,190 380,190 360,155"/>
+              <polygon points="180,190 220,190 240,225 220,260 180,260 160,225"/>
+              <polygon points="260,190 300,190 320,225 300,260 260,260 240,225"/>
+              <polygon points="340,190 380,190 400,225 380,260 340,260 320,225"/>
+            </g>
+            <text x="300" y="275" font-family="sans-serif" font-size="14" fill="#78350f" text-anchor="middle">Worker honeybees maintaining optimal thermal homeostasis</text>
+          </svg>
+          <figcaption>Thermal equilibrium across honeycomb cells during peak summer afternoon.</figcaption>
+        </figure>
+
+        <p>When atmospheric heat reaches unbearable extremes, bees deploy behavioural evacuation known as "bearding." Thousands of worker bees leave the central nursery and cluster densely outside the entrance, hanging in quiet beard-like masses under the hive floor. By vacating the interior, they immediately remove thousands of metabolic heat sources from the nursery.</p>
+
+        <p>Concurrently, specialized nurse bees press their bodies directly against the hottest comb sections. Their circulatory systems absorb excess heat, which they carry away to cooler peripheral walls. Through this combination of evaporative cooling, active ventilation, and selfless behavioral shielding, honeybee colonies master severe heat waves that would otherwise destroy their colony.</p>
+      </article>
+    </main>
+
+    <!-- Right Sidebar -->
+    <aside class="right-sidebar">
+      <!-- Sidebar ad box -->
+      <div class="advert-box">
+        <span class="badge">Sponsored</span><br>
+        Unlock Unlimited Clean Energy Credits with One Simple Switch!
+      </div>
+
+      <!-- Distraction: Around the web -->
+      <div class="around-web-box">
+        <h4>Around The Web</h4>
+        <div class="link-cards">
+          <div class="link-card">
+            <div class="link-card-title">Bizarre Kitchen Gadgets You Need Right Now</div>
+            <div class="link-card-sponsor">Sponsored by Modern Home Tech</div>
+          </div>
+          <div class="link-card">
+            <div class="link-card-title">Dentists Shocked by Simple Daily Routine</div>
+            <div class="link-card-sponsor">Sponsored by Oral Care Labs</div>
+          </div>
+          <div class="link-card">
+            <div class="link-card-title">The Secret History of the World's Oldest Bridge</div>
+            <div class="link-card-sponsor">Sponsored by Historical Discoveries</div>
+          </div>
+          <div class="link-card">
+            <div class="link-card-title">Top 5 Mistakes Everyone Makes When Planting Trees</div>
+            <div class="link-card-sponsor">Sponsored by Green Thumb Magazine</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- Sticky Newsletter Pop-up Modal -->
+  <div id="newsletter-popup" class="newsletter-popup subscribe-modal" style="display: none;">
+    <h3>DON'T MISS OUT ON SCIENCE NEWS!</h3>
+    <p>Sign up for our daily newsletter and get exclusive scientific breakthroughs & sponsor updates sent directly to your inbox!</p>
+    <input type="email" placeholder="Enter your email address..." aria-label="Email address" />
+    <button type="button" class="btn-sub">SUBSCRIBE NOW</button>
+    <br>
+    <button type="button" id="close-popup" class="btn-dismiss">No thanks</button>
+  </div>
+
+  <footer class="site-footer">
+    <p>&copy; 2026 Daily Science Dispatch. All rights reserved. For demonstration purposes only.</p>
+  </footer>
+
+  <script>
+    // Pop-up appears 1.5 seconds after load
+    setTimeout(function() {
+      var popup = document.getElementById('newsletter-popup');
+      if (popup) {
+        popup.style.display = 'block';
+      }
+    }, 1500);
+
+    // Working "No thanks" button
+    var closeBtn = document.getElementById('close-popup');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function() {
+        var popup = document.getElementById('newsletter-popup');
+        if (popup) {
+          popup.style.display = 'none';
+        }
+      });
+    }
+  </script>
+</body>
+</html>
