@@ -13,6 +13,11 @@ const MAX_BYTES = 2 * 1024 * 1024; // 2 MB
 const TIMEOUT_MS = 7000; // 7 seconds
 const MAX_REDIRECTS = 3;
 
+const PRIMARY_USER_AGENT =
+  'AuraGazeHackathon/1.0 (accessibility reader; mailto:team@auragaze.org; https://github.com/sharmistha-pasg/AuraGaze)';
+const FALLBACK_USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
 interface ReaderErrorResponse {
   ok: false;
   code: string;
@@ -71,10 +76,23 @@ export async function GET(request: NextRequest) {
           redirect: 'manual',
           signal: controller.signal,
           headers: {
-            'User-Agent': 'AuraGazeHackathon/1.0 (accessibility reader; contact: see repository)',
+            'User-Agent': PRIMARY_USER_AGENT,
             'Accept': 'text/html,application/xhtml+xml',
           },
         });
+
+        // If upstream site blocks custom bot User-Agent (common with Wikimedia WAF and Cloudflare), retry with standard browser UA
+        if (response.status === 403 || response.status === 429) {
+          response = await fetch(currentUrl, {
+            method: 'GET',
+            redirect: 'manual',
+            signal: controller.signal,
+            headers: {
+              'User-Agent': FALLBACK_USER_AGENT,
+              'Accept': 'text/html,application/xhtml+xml',
+            },
+          });
+        }
       } catch (fetchErr: unknown) {
         clearTimeout(timeoutId);
         if (fetchErr instanceof Error && fetchErr.name === 'AbortError') {
