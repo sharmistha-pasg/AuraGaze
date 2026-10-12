@@ -12,13 +12,21 @@
   var READER_STYLE_ID = 'aura-reader-style';
 
   var currentProfile = null;
-  var isEnabled = true;
+  var currentMode = 'suggest'; // 'always' | 'suggest' | 'off'
+  var isEnabled = false;
+  var sitesOn = [];
+  var sitesNever = [];
+  var highestScore = 0;
+  var suggestionCardShown = false;
+  var scoreTimer1 = null;
+  var scoreTimer2 = null;
   var isReaderActive = false;
   var originalBodyNode = null;
   var revealTimers = new WeakMap();
   var videoObserver = null;
 
   var Aura = typeof globalThis.AuraProfile !== 'undefined' ? globalThis.AuraProfile : null;
+  var AuraLoad = typeof globalThis.AuraLoad !== 'undefined' ? globalThis.AuraLoad : null;
 
   function safeProfile(p) {
     if (Aura && typeof Aura.validateProfile === 'function') {
@@ -101,7 +109,7 @@
 
       // Hide distractions (conservative selector list)
       if (currentProfile.hideDistractions) {
-        var selectors = [
+        var selectors = AuraLoad && AuraLoad.HIDE_SELECTORS ? AuraLoad.HIDE_SELECTORS : [
           '[id^="ad-"]',
           '[class^="ad-"]',
           '[class*=" ad-"]',
@@ -466,36 +474,319 @@
     } catch (e) {}
   }
 
-  // --- 4. Listeners & Initialization ---
+  // --- 4. Suggestion Card & Sensory Scoring ---
+  var SUGGESTION_HOST_ID = 'aura-suggestion-host';
+
+  function applyAura() {
+    try {
+      isEnabled = true;
+      applyStyles();
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', freezeAllVideos);
+      } else {
+        freezeAllVideos();
+      }
+      setupVideoObserver();
+    } catch (e) {}
+  }
+
+  function removeAura() {
+    try {
+      isEnabled = false;
+      removeStyles();
+    } catch (e) {}
+  }
+
+  function removeSuggestionCard() {
+    try {
+      var hostEl = document.getElementById(SUGGESTION_HOST_ID);
+      if (hostEl) hostEl.remove();
+      suggestionCardShown = false;
+    } catch (e) {}
+  }
+
+  function addSiteToStorage(key, host) {
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get([key], function (items) {
+          var arr = Array.isArray(items[key]) ? items[key] : [];
+          if (!arr.includes(host)) {
+            arr.push(host);
+            var update = {};
+            update[key] = arr;
+            chrome.storage.local.set(update);
+          }
+        });
+      }
+    } catch (e) {}
+  }
+
+  function showSuggestionCard(details) {
+    try {
+      if (suggestionCardShown) return;
+      removeSuggestionCard();
+
+      var hostEl = document.createElement('div');
+      hostEl.id = SUGGESTION_HOST_ID;
+      hostEl.setAttribute('role', 'region');
+      hostEl.setAttribute('aria-label', 'AuraGaze suggestion');
+
+      var shadow = hostEl.attachShadow({ mode: 'open' });
+      var host = window.location.hostname.toLowerCase();
+
+      var parts = [];
+      var moving = (details.animations || 0) + (details.marquees || 0);
+      if (moving > 0) parts.push(moving + (moving === 1 ? ' moving item' : ' moving items'));
+      var vids = details.videos || 0;
+      if (vids > 0) parts.push(vids + (vids === 1 ? ' video' : ' videos'));
+      var ads = (details.hideList || 0) + (details.overlays || 0) + (details.adIframes || 0);
+      if (ads > 0) parts.push(ads + (ads === 1 ? ' ad or pop-up' : ' ads or pop-ups'));
+
+      var busyDesc = parts.length > 0 ? ': ' + parts.join(', ') : '';
+      var cardText = 'This page looks busy' + busyDesc + '. Switch to a calmer view?';
+
+      var style = document.createElement('style');
+      style.textContent = [
+        ':host {',
+        '  position: fixed !important;',
+        '  bottom: 16px !important;',
+        '  left: 16px !important;',
+        '  z-index: 2147483647 !important;',
+        '  max-width: 360px !important;',
+        '  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;',
+        '  animation: none !important;',
+        '  transition: none !important;',
+        '}',
+        '.card {',
+        '  background-color: #EAF0E6 !important;',
+        '  color: #26352A !important;',
+        '  border: 2px solid #A9BFA9 !important;',
+        '  border-radius: 10px !important;',
+        '  padding: 14px 16px !important;',
+        '  box-shadow: 0 4px 16px rgba(0,0,0,0.18) !important;',
+        '  line-height: 1.45 !important;',
+        '}',
+        '.msg {',
+        '  font-size: 13px !important;',
+        '  font-weight: 700 !important;',
+        '  margin-bottom: 12px !important;',
+        '  color: #26352A !important;',
+        '}',
+        '.btn-row {',
+        '  display: flex !important;',
+        '  flex-wrap: wrap !important;',
+        '  gap: 8px !important;',
+        '  margin-bottom: 8px !important;',
+        '}',
+        'button {',
+        '  padding: 6px 12px !important;',
+        '  border-radius: 6px !important;',
+        '  font-size: 12px !important;',
+        '  font-weight: 700 !important;',
+        '  cursor: pointer !important;',
+        '  border: 1px solid #A9BFA9 !important;',
+        '  background-color: #F3F7F0 !important;',
+        '  color: #26352A !important;',
+        '  outline: none !important;',
+        '  animation: none !important;',
+        '  transition: none !important;',
+        '}',
+        'button:focus-visible {',
+        '  outline: 3px solid #3F6445 !important;',
+        '  outline-offset: 2px !important;',
+        '}',
+        '.btn-primary {',
+        '  background-color: #3F6445 !important;',
+        '  color: #ffffff !important;',
+        '  border-color: #3F6445 !important;',
+        '}',
+        '.footer {',
+        '  font-size: 10px !important;',
+        '  color: #26352A !important;',
+        '  opacity: 0.8 !important;',
+        '  margin-top: 4px !important;',
+        '}',
+      ].join('\n');
+
+      var card = document.createElement('div');
+      card.className = 'card';
+
+      var msgEl = document.createElement('div');
+      msgEl.className = 'msg';
+      msgEl.textContent = cardText;
+      card.appendChild(msgEl);
+
+      var btnRow = document.createElement('div');
+      btnRow.className = 'btn-row';
+
+      var btnCalm = document.createElement('button');
+      btnCalm.type = 'button';
+      btnCalm.className = 'btn-primary';
+      btnCalm.textContent = 'Calm view';
+
+      var btnNotNow = document.createElement('button');
+      btnNotNow.type = 'button';
+      btnNotNow.textContent = 'Not now';
+
+      var btnNever = document.createElement('button');
+      btnNever.type = 'button';
+      btnNever.textContent = 'Never on this site';
+
+      btnRow.appendChild(btnCalm);
+      btnRow.appendChild(btnNotNow);
+      btnRow.appendChild(btnNever);
+      card.appendChild(btnRow);
+
+      var footer = document.createElement('div');
+      footer.className = 'footer';
+      footer.textContent = 'Based on this page only. Nothing leaves your browser.';
+      card.appendChild(footer);
+
+      shadow.appendChild(style);
+      shadow.appendChild(card);
+
+      btnCalm.addEventListener('click', function () {
+        addSiteToStorage('aura.sitesOn', host);
+        applyAura();
+        removeSuggestionCard();
+      });
+
+      btnNotNow.addEventListener('click', function () {
+        try { sessionStorage.setItem('aura-not-now', '1'); } catch (e) {}
+        removeSuggestionCard();
+      });
+
+      btnNever.addEventListener('click', function () {
+        addSiteToStorage('aura.sitesNever', host);
+        removeSuggestionCard();
+      });
+
+      document.body ? document.body.appendChild(hostEl) : document.documentElement.appendChild(hostEl);
+      suggestionCardShown = true;
+    } catch (e) {}
+  }
+
+  function runScoringCheck() {
+    try {
+      if (window !== window.top) return;
+      if (location.protocol === 'chrome:' || location.protocol === 'chrome-extension:') return;
+      if (location.pathname === '/dashboard' || location.pathname === '/extension') return;
+
+      var host = window.location.hostname.toLowerCase();
+      if (currentMode !== 'suggest' || sitesOn.includes(host) || sitesNever.includes(host)) return;
+
+      try {
+        if (sessionStorage.getItem('aura-not-now') === '1') return;
+      } catch (e) {}
+
+      if (!AuraLoad || typeof AuraLoad.measure !== 'function') return;
+
+      var res = AuraLoad.measure(document, window);
+      var currentScore = res.score || 0;
+      if (currentScore > highestScore) {
+        highestScore = currentScore;
+      }
+
+      var isReducedMotion = false;
+      try {
+        isReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      } catch (e) {}
+
+      var threshold = isReducedMotion ? 5 : 8;
+
+      if (highestScore >= threshold && !suggestionCardShown) {
+        showSuggestionCard(res.details || {});
+      }
+    } catch (e) {}
+  }
+
+  function scheduleSensoryScoring() {
+    try {
+      if (window !== window.top) return;
+      if (location.protocol === 'chrome:' || location.protocol === 'chrome-extension:') return;
+      if (location.pathname === '/dashboard' || location.pathname === '/extension') return;
+
+      var onDomReady = function () {
+        if (scoreTimer1) clearTimeout(scoreTimer1);
+        if (scoreTimer2) clearTimeout(scoreTimer2);
+
+        scoreTimer1 = setTimeout(runScoringCheck, 1500);
+        scoreTimer2 = setTimeout(runScoringCheck, 5000);
+      };
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', onDomReady, { once: true });
+      } else {
+        onDomReady();
+      }
+    } catch (e) {}
+  }
+
+  function updateActiveState() {
+    try {
+      var host = window.location.hostname.toLowerCase();
+      if (currentMode === 'always') {
+        applyAura();
+        removeSuggestionCard();
+      } else if (currentMode === 'suggest') {
+        if (sitesOn.includes(host)) {
+          applyAura();
+          removeSuggestionCard();
+        } else {
+          removeAura();
+          if (window === window.top && !sitesNever.includes(host)) {
+            scheduleSensoryScoring();
+          }
+        }
+      } else {
+        // 'off'
+        removeAura();
+        removeSuggestionCard();
+      }
+    } catch (e) {}
+  }
+
+  // --- 5. Listeners & Initialization ---
   function init() {
     try {
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
-        chrome.storage.sync.get(['aura.profile', 'aura.enabled'], function (items) {
-          isEnabled = items['aura.enabled'] !== false;
-          currentProfile = safeProfile(items['aura.profile']);
-          applyStyles();
-          if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', freezeAllVideos);
-          } else {
-            freezeAllVideos();
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+        chrome.storage.sync.get(['aura.profile', 'aura.mode', 'aura.enabled'], function (syncItems) {
+          var mode = syncItems['aura.mode'];
+          if (!mode) {
+            if (syncItems['aura.enabled'] === true) mode = 'always';
+            else if (syncItems['aura.enabled'] === false) mode = 'off';
+            else mode = 'suggest'; // new install default
           }
-          setupVideoObserver();
+          currentMode = mode;
+          currentProfile = safeProfile(syncItems['aura.profile']);
+
+          chrome.storage.local.get(['aura.sitesOn', 'aura.sitesNever'], function (localItems) {
+            sitesOn = Array.isArray(localItems['aura.sitesOn']) ? localItems['aura.sitesOn'] : [];
+            sitesNever = Array.isArray(localItems['aura.sitesNever']) ? localItems['aura.sitesNever'] : [];
+            updateActiveState();
+          });
         });
 
         chrome.storage.onChanged.addListener(function (changes, area) {
           if (area === 'sync') {
-            if (changes['aura.enabled']) {
-              isEnabled = changes['aura.enabled'].newValue !== false;
+            if (changes['aura.mode']) {
+              currentMode = changes['aura.mode'].newValue || 'suggest';
             }
             if (changes['aura.profile']) {
               currentProfile = safeProfile(changes['aura.profile'].newValue);
             }
-            applyStyles();
-            if (isEnabled && currentProfile && currentProfile.videoFreeze) {
-              freezeAllVideos();
-            } else {
-              unfreezeAllVideos();
+            if (changes['aura.enabled'] && !changes['aura.mode']) {
+              currentMode = changes['aura.enabled'].newValue === false ? 'off' : 'always';
             }
+            updateActiveState();
+          } else if (area === 'local') {
+            if (changes['aura.sitesOn']) {
+              sitesOn = Array.isArray(changes['aura.sitesOn'].newValue) ? changes['aura.sitesOn'].newValue : [];
+            }
+            if (changes['aura.sitesNever']) {
+              sitesNever = Array.isArray(changes['aura.sitesNever'].newValue) ? changes['aura.sitesNever'].newValue : [];
+            }
+            updateActiveState();
           }
         });
       }
@@ -506,7 +797,11 @@
           if (msg && msg.type === 'aura-reader-toggle') {
             toggleReaderView();
             sendResponse({ ok: true });
+          } else if (msg && msg.type === 'aura-get-score') {
+            var scoreVal = document.documentElement && document.documentElement.dataset ? document.documentElement.dataset.auraLoadScore : null;
+            sendResponse({ score: scoreVal || (highestScore > 0 ? String(highestScore) : 'Not measured yet') });
           }
+          return true;
         });
       }
 

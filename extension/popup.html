@@ -10,14 +10,22 @@
     <header class="popup-header">
       <div class="header-title-row">
         <h1 class="logo">AuraGaze</h1>
-        <div class="toggle-wrapper">
-          <label class="switch-label">
-            <input type="checkbox" id="master-toggle" checked>
-            <span class="toggle-text" id="master-status-text">On</span>
-          </label>
-        </div>
       </div>
       <p class="tagline">Sensory-Safe Web Reading</p>
+
+      <div class="mode-wrapper" style="margin-top: 10px;">
+        <label for="mode-select" class="section-label" style="display: block; margin-bottom: 4px;">Mode</label>
+        <select id="mode-select" class="select-field">
+          <option value="suggest">Suggest a calm view when a page looks busy</option>
+          <option value="always">Always on</option>
+          <option value="off">Off</option>
+        </select>
+      </div>
+
+      <div class="score-row" style="margin-top: 8px; font-size: 11px; display: flex; justify-content: space-between; align-items: center;">
+        <span>Page sensory load score:</span>
+        <strong id="active-tab-score" style="font-family: monospace;">Not measured yet</strong>
+      </div>
     </header>
 
     <div class="reader-btn-row">
@@ -86,6 +94,15 @@
         <span id="delay-val" class="slider-val">2.0s</span>
       </div>
       <input type="range" id="delay-slider" min="1000" max="4000" step="250" value="2000">
+    </section>
+
+    <!-- Site Memory Management -->
+    <section class="section">
+      <label class="section-label">Site Permissions</label>
+      <button type="button" id="forget-sites-btn" class="btn btn-sm" style="width: 100%;">
+        Forget my site choices
+      </button>
+      <div id="forget-sites-msg" class="import-msg" style="text-align: center;" aria-live="polite"></div>
     </section>
 
     <!-- Import Profile -->

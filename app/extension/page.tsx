@@ -74,6 +74,15 @@ export default function ExtensionPage() {
             Transform article pages directly in your active tab into clean, single-column reading with instant toggle-back support.
           </p>
         </div>
+
+        <div className="p-5 rounded-xl border border-[var(--ag-border)] bg-[var(--ag-surface)] space-y-2">
+          <h2 className="text-base font-bold text-[var(--ag-text)]">
+            Calm View Suggestion
+          </h2>
+          <p className="text-xs text-[var(--ag-text)] opacity-85 leading-relaxed">
+            Suggests a calm view when a page looks busy with excessive animations, autoplay videos, or pop-ups. Never changes a page without your approval.
+          </p>
+        </div>
       </section>
 
       {/* Numbered Install Steps */}
@@ -122,6 +131,9 @@ export default function ExtensionPage() {
           </li>
           <li>
             <strong>Heuristic hiding:</strong> Distraction removal uses targeted heuristic selector rules rather than a heavy full ad-blocking engine.
+          </li>
+          <li>
+            <strong>Calm view suggestion:</strong> The calm view suggestion looks only at the page and at your own reduce-motion setting. It cannot tell how you feel.
           </li>
         </ul>
       </section>

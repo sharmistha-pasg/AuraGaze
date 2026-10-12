@@ -14,7 +14,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["profile.js", "Readability.js", "content.js"],
+      "js": ["profile.js", "load-score.js", "Readability.js", "content.js"],
       "run_at": "document_start",
       "all_frames": true,
       "match_about_blank": true

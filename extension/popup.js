@@ -3,11 +3,13 @@
 
   var Aura = typeof globalThis.AuraProfile !== 'undefined' ? globalThis.AuraProfile : null;
   var currentProfile = null;
-  var isEnabled = true;
+  var currentMode = 'suggest'; // 'always' | 'suggest' | 'off'
 
   // DOM Elements
-  var masterToggle = document.getElementById('master-toggle');
-  var masterStatusText = document.getElementById('master-status-text');
+  var modeSelect = document.getElementById('mode-select');
+  var activeTabScore = document.getElementById('active-tab-score');
+  var forgetSitesBtn = document.getElementById('forget-sites-btn');
+  var forgetSitesMsg = document.getElementById('forget-sites-msg');
   var readerBtn = document.getElementById('reader-toggle-btn');
   var readerMsg = document.getElementById('reader-msg');
 
@@ -39,11 +41,28 @@
     return p || {};
   }
 
+  function queryTabScore() {
+    try {
+      if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
+        chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+          if (tabs && tabs[0] && tabs[0].id) {
+            chrome.tabs.sendMessage(tabs[0].id, { type: 'aura-get-score' }, function (resp) {
+              if (chrome.runtime.lastError || !resp || typeof resp.score === 'undefined') {
+                if (activeTabScore) activeTabScore.textContent = 'Not measured yet';
+              } else {
+                if (activeTabScore) activeTabScore.textContent = String(resp.score);
+              }
+            });
+          }
+        });
+      }
+    } catch (e) {}
+  }
+
   function updateUI() {
     if (!currentProfile) return;
 
-    masterToggle.checked = isEnabled;
-    masterStatusText.textContent = isEnabled ? 'On' : 'Off';
+    if (modeSelect) modeSelect.value = currentMode;
 
     paletteSelect.value = currentProfile.palette || 'auto';
     fontScaleSlider.value = currentProfile.fontScale || 1.1;
@@ -64,7 +83,8 @@
     if (!currentProfile) return;
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
       chrome.storage.sync.set({
-        'aura.enabled': isEnabled,
+        'aura.mode': currentMode,
+        'aura.enabled': currentMode !== 'off',
         'aura.profile': currentProfile,
       });
     }
@@ -87,12 +107,35 @@
     if (Aura && Aura.PRESETS) setProfile(Aura.PRESETS.maxCalm);
   });
 
-  // Master Toggle
-  masterToggle.addEventListener('change', function () {
-    isEnabled = masterToggle.checked;
-    masterStatusText.textContent = isEnabled ? 'On' : 'Off';
-    saveSettings();
-  });
+  // Mode select handler
+  if (modeSelect) {
+    modeSelect.addEventListener('change', function () {
+      currentMode = modeSelect.value;
+      saveSettings();
+    });
+  }
+
+  // Forget site choices handler
+  if (forgetSitesBtn) {
+    forgetSitesBtn.addEventListener('click', function () {
+      try {
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({
+            'aura.sitesOn': [],
+            'aura.sitesNever': [],
+          }, function () {
+            if (forgetSitesMsg) {
+              forgetSitesMsg.style.color = 'var(--ag-accent)';
+              forgetSitesMsg.textContent = 'Cleared site choices.';
+              setTimeout(function () {
+                if (forgetSitesMsg) forgetSitesMsg.textContent = '';
+              }, 2500);
+            }
+          });
+        }
+      } catch (e) {}
+    });
+  }
 
   // Palette change
   paletteSelect.addEventListener('change', function () {
@@ -211,8 +254,14 @@
 
   // Initialize from storage
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
-    chrome.storage.sync.get(['aura.profile', 'aura.enabled'], function (items) {
-      isEnabled = items['aura.enabled'] !== false;
+    chrome.storage.sync.get(['aura.profile', 'aura.mode', 'aura.enabled'], function (items) {
+      var mode = items['aura.mode'];
+      if (!mode) {
+        if (items['aura.enabled'] === true) mode = 'always';
+        else if (items['aura.enabled'] === false) mode = 'off';
+        else mode = 'suggest'; // new install default
+      }
+      currentMode = mode;
       var raw = items['aura.profile'];
       if (!raw && Aura && Aura.defaultProfile) {
         currentProfile = Aura.defaultProfile();
@@ -220,6 +269,7 @@
         currentProfile = getValidatedProfile(raw);
       }
       updateUI();
+      queryTabScore();
     });
   } else if (Aura && Aura.defaultProfile) {
     currentProfile = Aura.defaultProfile();
