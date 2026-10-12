@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:profile": "node --test 'shared/**/*.test.js'",
+    "test:reader": "node scripts/test-reader.mjs",
     "ext:sync": "node scripts/ext-sync.mjs",
     "ext:zip": "node scripts/ext-zip.mjs"
   },
