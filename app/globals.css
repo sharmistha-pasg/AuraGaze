@@ -1,11 +1,21 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: light;
   --ag-bg: #EAF0E6;
   --ag-surface: #F3F7F0;
   --ag-text: #26352A;
   --ag-accent: #3F6445;
   --ag-border: #A9BFA9;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --ag-bg: #1E2B23;
+  --ag-surface: #26362C;
+  --ag-text: #E2EBDD;
+  --ag-accent: #8FB996;
+  --ag-border: #3E5646;
 }
 
 *, *::before, *::after {

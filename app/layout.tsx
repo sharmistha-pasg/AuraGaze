@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Atkinson_Hyperlegible, Lexend } from "next/font/google";
+import ThemeToggle from "@/components/ThemeToggle";
 import "./globals.css";
 
 const atkinson = Atkinson_Hyperlegible({
@@ -26,7 +27,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${atkinson.variable} ${lexend.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${atkinson.variable} ${lexend.variable}`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("aura.theme");if(!t){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="light";}})();`,
+          }}
+        />
+      </head>
       <body className="bg-[var(--ag-bg)] text-[var(--ag-text)] font-[family-name:var(--font-atkinson)] antialiased min-h-screen">
         <a
           href="#main-content"
@@ -34,6 +42,9 @@ export default function RootLayout({
         >
           Skip to content
         </a>
+        <header className="max-w-7xl mx-auto px-4 pt-2.5 pb-0 flex justify-end">
+          <ThemeToggle />
+        </header>
         {children}
       </body>
     </html>
