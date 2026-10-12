@@ -77,6 +77,42 @@ async function runTests() {
     }
   });
 
+  // 7. Wikipedia Raw HTML Mode
+  await check('url=https://en.wikipedia.org/wiki/Photosynthesis&raw=1 returns 200, ok true, valid sanitized raw HTML', async () => {
+    const target = encodeURIComponent('https://en.wikipedia.org/wiki/Photosynthesis');
+    const res = await fetch(`${BASE_URL}/api/reader?url=${target}&raw=1`);
+    if (res.status !== 200) throw new Error(`Expected 200, got ${res.status}`);
+    const data = await res.json();
+    if (!data.ok) throw new Error('Expected ok: true in response');
+    if (!data.html || typeof data.html !== 'string') throw new Error('Expected data.html string in response');
+    const htmlLower = data.html.toLowerCase();
+    if (!htmlLower.includes('<base')) {
+      throw new Error('Expected html to contain <base');
+    }
+    if (htmlLower.includes('<script')) {
+      throw new Error('Found forbidden <script in raw html');
+    }
+    if (htmlLower.includes('onclick')) {
+      throw new Error('Found forbidden onclick in raw html');
+    }
+  });
+
+  // 8. Link-local metadata with raw=1
+  await check('url=http://169.254.169.254/&raw=1 returns 400 BLOCKED_HOST', async () => {
+    const res = await fetch(`${BASE_URL}/api/reader?url=http://169.254.169.254/&raw=1`);
+    if (res.status !== 400) throw new Error(`Expected 400, got ${res.status}`);
+    const data = await res.json();
+    if (data.code !== 'BLOCKED_HOST') throw new Error(`Expected code BLOCKED_HOST, got ${data.code}`);
+  });
+
+  // 9. localtest.me with raw=1
+  await check('url=http://localtest.me/&raw=1 returns 400 BLOCKED_HOST', async () => {
+    const res = await fetch(`${BASE_URL}/api/reader?url=http://localtest.me/&raw=1`);
+    if (res.status !== 400) throw new Error(`Expected 400, got ${res.status}`);
+    const data = await res.json();
+    if (data.code !== 'BLOCKED_HOST') throw new Error(`Expected code BLOCKED_HOST, got ${data.code}`);
+  });
+
   console.log(`\nTests completed: ${failed === 0 ? 'ALL PASSED' : `${failed} FAILED`}`);
   if (failed > 0) {
     process.exit(1);

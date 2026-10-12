@@ -100,3 +100,86 @@ export function useReader(initialUrl: string = '/fixtures/cluttered.html'): UseR
     loadUrl: setCurrentUrl,
   };
 }
+
+export type RawOriginalStatus = 'idle' | 'loading' | 'success' | 'error';
+
+export interface UseRawOriginalResult {
+  status: RawOriginalStatus;
+  html: string | null;
+  sourceUrl: string | null;
+  errorMessage: string | null;
+  loadUrl: (url: string) => void;
+}
+
+export function useRawOriginal(initialUrl: string = '/fixtures/cluttered.html'): UseRawOriginalResult {
+  const [currentUrl, setCurrentUrl] = useState<string>(initialUrl);
+  const [status, setStatus] = useState<RawOriginalStatus>('idle');
+  const [html, setHtml] = useState<string | null>(null);
+  const [sourceUrl, setSourceUrl] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!currentUrl || currentUrl === '/fixtures/cluttered.html' || currentUrl === 'demo') {
+      setStatus('idle');
+      setHtml(null);
+      setSourceUrl(null);
+      setErrorMessage(null);
+      return;
+    }
+
+    let isCancelled = false;
+    setStatus('loading');
+    setErrorMessage(null);
+
+    async function fetchRaw() {
+      try {
+        const res = await fetch(`/api/reader?url=${encodeURIComponent(currentUrl)}&raw=1`);
+        if (isCancelled) return;
+
+        if (!res.ok) {
+          let code: string | null = null;
+          try {
+            const data = await res.json();
+            code = data.error || data.code;
+          } catch {
+            // Not JSON
+          }
+          setStatus('error');
+          setHtml(null);
+          setSourceUrl(null);
+          setErrorMessage(getFriendlyErrorMessage(code || 'UPSTREAM_ERROR'));
+          return;
+        }
+
+        const data = await res.json();
+        if (isCancelled) return;
+
+        setStatus('success');
+        setHtml(data.html || '');
+        setSourceUrl(data.sourceUrl || currentUrl);
+        setErrorMessage(null);
+      } catch {
+        if (isCancelled) return;
+        setStatus('error');
+        setHtml(null);
+        setSourceUrl(null);
+        setErrorMessage(getFriendlyErrorMessage('TIMEOUT'));
+      }
+    }
+
+    fetchRaw();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentUrl]);
+
+  return {
+    status,
+    html,
+    sourceUrl,
+    errorMessage,
+    loadUrl: setCurrentUrl,
+  };
+}
+

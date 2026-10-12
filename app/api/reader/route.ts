@@ -37,6 +37,7 @@ function makeError(code: string, status: number, upstreamStatus?: number) {
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const rawUrl = searchParams.get('url');
+  const isRaw = searchParams.get('raw') === '1';
 
   if (!rawUrl || !rawUrl.trim()) {
     return makeError('INVALID_URL', 400);
@@ -168,6 +169,85 @@ export async function GET(request: NextRequest) {
 
     const htmlBuffer = Buffer.concat(chunks);
     const rawHtml = new TextDecoder('utf-8').decode(htmlBuffer);
+
+    // If raw=1 requested: skip Readability, strip scripts/handlers/embeds, inject base tag, return raw HTML
+    if (isRaw) {
+      const dom = new JSDOM(rawHtml, { url: currentUrl });
+      const document = dom.window.document;
+
+      // Remove forbidden elements
+      const forbiddenTags = document.querySelectorAll(
+        'script, noscript, iframe, object, embed, applet, form, base'
+      );
+      forbiddenTags.forEach((el) => el.remove());
+
+      document.querySelectorAll('meta').forEach((meta) => {
+        const httpEquiv = (meta.getAttribute('http-equiv') || '').toLowerCase();
+        if (httpEquiv === 'refresh') {
+          meta.remove();
+        }
+      });
+
+      document.querySelectorAll('link').forEach((link) => {
+        const rel = (link.getAttribute('rel') || '').toLowerCase();
+        if (['preload', 'modulepreload', 'prefetch'].includes(rel)) {
+          link.remove();
+        }
+      });
+
+      // Remove every attribute that starts with "on" from every element, and remove javascript: URLs
+      document.querySelectorAll('*').forEach((el) => {
+        const attrNames = Array.from(el.attributes).map((attr) => attr.name);
+        for (const name of attrNames) {
+          if (name.toLowerCase().startsWith('on')) {
+            el.removeAttribute(name);
+          }
+        }
+
+        const href = el.getAttribute('href');
+        if (href && href.trim().toLowerCase().startsWith('javascript:')) {
+          el.removeAttribute('href');
+        }
+
+        const src = el.getAttribute('src');
+        if (src && src.trim().toLowerCase().startsWith('javascript:')) {
+          el.removeAttribute('src');
+        }
+      });
+
+      // Insert as first children of <head>: <base href="FINAL_URL" target="_blank"> and <meta name="referrer" content="no-referrer">
+      let head = document.head;
+      if (!head) {
+        head = document.createElement('head');
+        if (document.documentElement) {
+          document.documentElement.insertBefore(head, document.body || null);
+        } else {
+          document.appendChild(head);
+        }
+      }
+
+      const baseEl = document.createElement('base');
+      baseEl.setAttribute('href', currentUrl);
+      baseEl.setAttribute('target', '_blank');
+
+      const metaReferrer = document.createElement('meta');
+      metaReferrer.setAttribute('name', 'referrer');
+      metaReferrer.setAttribute('content', 'no-referrer');
+
+      if (head.firstChild) {
+        head.insertBefore(metaReferrer, head.firstChild);
+        head.insertBefore(baseEl, metaReferrer);
+      } else {
+        head.appendChild(baseEl);
+        head.appendChild(metaReferrer);
+      }
+
+      return NextResponse.json({
+        ok: true,
+        html: dom.serialize(),
+        sourceUrl: currentUrl,
+      });
+    }
 
     // 3. Parse with JSDOM
     const dom = new JSDOM(rawHtml, { url: currentUrl });
